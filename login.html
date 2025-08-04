@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VSPN Construction Login</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1c365e;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 36px 36px;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      width: 370px;
+      max-width: 98vw;
+      background: #f8fafc;
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(25,64,110,0.13);
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+    .header {
+      text-align: center;
+      padding: 26px 16px 14px;
+      position: relative;
+    }
+    .header img {
+      height: 60px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: #383737;
+      letter-spacing: 1.2px;
+    }
+    form {
+      display: block;
+      padding: 24px 24px 20px 24px;
+      box-sizing: border-box;
+    }
+    .field-group {
+      position: relative;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 13px 12px 40px;
+      border: 1.4px solid #d7dbe2;
+      border-radius: 7px;
+      font-size: 1rem;
+      margin: 10px 0 17px;
+      color: #273449;
+      background: #fff;
+      background-repeat: no-repeat;
+      background-position: 12px center;
+      background-size: 17px 17px;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      display: block;
+    }
+    input[type="email"] {
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%234F647D" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>');
+    }
+    input[type="password"] {
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%234F647D" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm6-7v-2a6 6 0 1 0-12 0v2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3zm-8-2a4 4 0 1 1 8 0v2H10v-2z"/></svg>');
+    }
+    #togglePwd {
+      position: absolute;
+      top: 27px;
+      right: 15px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #4F647D;
+      font-size: 17px;
+      padding: 3px 5px;
+      z-index: 1;
+    }
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #ff9800;
+      outline: none;
+    }
+    input[type="submit"] {
+      width: 100%;
+      padding: 13px;
+      background: #19406e;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.04rem;
+      margin-top: 6px;
+      transition: background 0.2s;
+      box-sizing: border-box;
+      display: block;
+    }
+    input[type="submit"]:hover, input[type="submit"]:focus {
+      background: #ff9800;
+      outline: none;
+    }
+    .role-msg, #spinner {
+      text-align: center;
+      font-size: 1.06rem;
+      font-weight: 600;
+      margin-top: 15px;
+      color: #19406e;
+      min-height: 1.5em;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .role-msg.error { color: #D32F2F; }
+    #spinner { font-size: 1.5rem; display: none; }
+    .shake { animation: shake 0.35s; }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%,50%,70% { transform: translateX(-4px); }
+      40%, 60% { transform: translateX(4px); }
+    }
+    .footer-link { text-align:center; margin-top:16px; font-size:0.95rem;}
+    .footer-link a { color:#19406e; }
+    #forgotLink { display:block;text-align:right;color:#19406e;font-size:0.98rem; margin-top:-8px; margin-bottom:10px;}
+    @media (max-width: 450px) {
+      .container { width: 98vw; }
+      .header h1 { font-size: 17px; }
+      form, .role-msg, #spinner { padding-left: 6px; padding-right: 6px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container" aria-label="Login panel">
+  <div class="header">
+    <img src="logo.png" alt="VSPN Construction Logo" />
+    <h1>VSPN Construction</h1>
+  </div>
+  <form id="login-form" autocomplete="off">
+    <input type="email" id="login-email" name="email" placeholder="Email" aria-label="Email" required autocomplete="username" />
+    <div class="field-group">
+      <input type="password" id="login-password" name="password" placeholder="Password" aria-label="Password" required autocomplete="current-password" />
+      <button type="button" id="togglePwd" aria-label="Toggle password visibility">👁️</button>
+    </div>
+    <a href="#" id="forgotLink">Forgot Password?</a>
+    <input type="submit" id="login-btn" value="Login" />
+    <div class="role-msg" id="roleMsg" aria-live="polite"></div>
+    <div id="spinner" role="status" aria-live="polite">⏳</div>
+  </form>
+  <div class="footer-link">
+    Don’t have an account?
+    <a href="register.html">Sign up here</a>
+  </div>
+</div>
+
+<script>
+  // --- Firebase config and services ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyAbubCQ9tpcZEL82TQoQfsu945rj1fAy2Q",
+    authDomain: "vspn-eff93.firebaseapp.com",
+    projectId: "vspn-eff93",
+    storageBucket: "vspn-eff93.firebasestorage.app",
+    messagingSenderId: "195245976021",
+    appId: "1:195245976021:web:7c4e4dcd02b316fb48b55c",
+    measurementId: "G-WNKKWZW4Q4"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // --- UI element selectors ---
+  const loginForm  = document.getElementById('login-form');
+  const roleMsg    = document.getElementById('roleMsg');
+  const spinner    = document.getElementById('spinner');
+  const submitBtn  = document.getElementById("login-btn");
+  const togglePwd  = document.getElementById('togglePwd');
+  const forgotLink = document.getElementById('forgotLink');
+
+  // --- Password Visibility Toggle ---
+  togglePwd.onclick = function() {
+    const pwd = document.getElementById('login-password');
+    if (pwd.type === "password") {
+      pwd.type = "text";
+      togglePwd.textContent = "🙈";
+    } else {
+      pwd.type = "password";
+      togglePwd.textContent = "👁️";
+    }
+  };
+
+  // --- Auth Guard: redirect if already logged in ---
+  auth.onAuthStateChanged(user => {
+    if (user) window.location.href = "dashboard.html";
+  });
+
+  // --- Forgot Password handler ---
+  forgotLink.onclick = function(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) {
+      roleMsg.textContent = "Enter your email above first.";
+      roleMsg.className = "role-msg error shake";
+      setTimeout(() => roleMsg.className = "role-msg error", 400);
+      return;
+    }
+    spinner.style.display = "block";
+    roleMsg.textContent = "";
+    auth.sendPasswordResetEmail(email)
+      .then(() => {
+        spinner.style.display = "none";
+        roleMsg.style.color = "#19406e";
+        roleMsg.textContent = "Password reset email sent! Check your inbox.";
+        roleMsg.className = "role-msg";
+      })
+      .catch(error => {
+        spinner.style.display = "none";
+        roleMsg.style.color = "#D32F2F";
+        roleMsg.textContent = error.message;
+        roleMsg.className = "role-msg error shake";
+        setTimeout(() => roleMsg.className = "role-msg error", 400);
+      });
+  };
+
+  // --- Login Form Submission Handler ---
+  loginForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    roleMsg.textContent = "";
+    spinner.textContent = "⏳";
+    spinner.style.display = "block";
+    submitBtn.disabled = true;
+
+    const email = loginForm['login-email'].value.trim();
+    const password = loginForm['login-password'].value;
+
+    // Input validation
+    if (!email || !password) {
+      spinner.style.display = "none";
+      roleMsg.textContent = "Please enter both email and password.";
+      roleMsg.style.color = "#D32F2F";
+      roleMsg.className = "role-msg error shake";
+      submitBtn.disabled = false;
+      setTimeout(() => roleMsg.className = "role-msg error", 400);
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      spinner.style.display = "none";
+      roleMsg.textContent = "Please enter a valid email address.";
+      roleMsg.style.color = "#D32F2F";
+      roleMsg.className = "role-msg error shake";
+      submitBtn.disabled = false;
+      setTimeout(() => roleMsg.className = "role-msg error", 400);
+      return;
+    }
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(({ user }) => {
+        // Optional: fetch role from Firestore
+        db.collection("users").doc(user.uid).get()
+          .then(doc => {
+            const role = doc.exists ? doc.data().role : "User";
+            roleMsg.textContent = `Login successful. Welcome, ${role}!`;
+            roleMsg.style.color = "#19406e";
+            roleMsg.className = "role-msg";
+            spinner.textContent = "✔️ Success! Redirecting...";
+            setTimeout(() => window.location.href = "dashboard.html", 1100);
+          })
+          .catch(() => {
+            roleMsg.textContent = "Login successful. Redirecting...";
+            roleMsg.style.color = "#19406e";
+            roleMsg.className = "role-msg";
+            spinner.textContent = "✔️";
+            setTimeout(() => window.location.href = "dashboard.html", 1100);
+          });
+      })
+      .catch(error => {
+        spinner.style.display = "none";
+        roleMsg.style.color = "#D32F2F";
+        roleMsg.textContent = error.message;
+        roleMsg.className = "role-msg error shake";
+        submitBtn.disabled = false;
+        setTimeout(() => roleMsg.className = "role-msg error", 400);
+      });
+  });
+</script>
+</body>
+</html>
